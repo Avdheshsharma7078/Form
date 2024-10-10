@@ -7,12 +7,11 @@ const { body, validationResult } = require("express-validator");
 const cors = require("cors");
 
 const app = express();
-app.use(cors()); // Enable CORS
+app.use(cors());
 app.use(express.json());
 
 let users = {};
 
-// Setup Nodemailer transport
 const transporter = nodemailer.createTransport({
   service: "gmail",
   auth: {
@@ -32,7 +31,7 @@ const sendEmail = (email, password) => {
   return transporter.sendMail(mailOptions);
 };
 
-const generateToken = (email) => {
+const gtoken = (email) => {
   return jwt.sign({ email }, process.env.JWT_SECRET, { expiresIn: "1h" });
 };
 
@@ -50,13 +49,13 @@ app.post(
 
     const { name, email } = req.body;
     const password = Math.random().toString(36).slice(-8);
-    const hashedPassword = await bcrypt.hash(password, 10);
+    const hashpass = await bcrypt.hash(password, 10);
 
-    users[email] = { name, password: hashedPassword };
+    users[email] = { name, password: hashpass };
 
     try {
       await sendEmail(email, password);
-      const token = generateToken(email);
+      const token = gtoken(email);
       res
         .status(200)
         .json({ message: "User signed up and password sent to email", token });
@@ -83,7 +82,7 @@ app.post(
     const user = users[email];
 
     if (user && (await bcrypt.compare(password, user.password))) {
-      const token = generateToken(email);
+      const token = gtoken(email);
       res.status(200).json({ message: "Login successful", token });
     } else {
       res.status(401).json({ message: "Invalid credentials" });
@@ -91,7 +90,7 @@ app.post(
   }
 );
 
-const authenticateToken = (req, res, next) => {
+const authToken = (req, res, next) => {
   const token = req.headers["authorization"]?.split(" ")[1];
   if (!token) return res.sendStatus(401);
 
@@ -104,7 +103,7 @@ const authenticateToken = (req, res, next) => {
 
 app.post(
   "/api/update-password",
-  authenticateToken,
+  authToken,
   [
     body("oldPassword").notEmpty().withMessage("Old password is required"),
     body("newPassword")

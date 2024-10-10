@@ -13,7 +13,7 @@ const UpdatePassword = () => {
     e.preventDefault();
 
     if (newPassword !== confirmNewPassword) {
-      alert("New passwords do not match!");
+      alert("New password do not match!");
       return;
     }
 
